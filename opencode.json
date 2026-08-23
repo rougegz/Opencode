@@ -1,0 +1,170 @@
+{
+	"$schema": "https://opencode.ai/config.json",
+	"model": "{env:OPENCODE_MODEL:-openai/gpt-4o}",
+	"small_model": "{env:OPENCODE_SMALL_MODEL:-openai/gpt-4o-mini}",
+	"default_agent": "coder",
+	"shell": "/bin/bash",
+	"share": "manual",
+	"autoupdate": true,
+	"snapshot": true,
+	"lsp": true,
+	"permission": "allow",
+	"server": {
+		"port": 4096,
+		"hostname": "127.0.0.1",
+		"mdns": false
+	},
+	"compaction": {
+		"auto": true,
+		"prune": true,
+		"reserved": 10000
+	},
+	"tool_output": {
+		"max_lines": 300,
+		"max_bytes": 8192
+	},
+	"watcher": {
+		"ignore": [
+			"node_modules/**",
+			".git/**",
+			"dist/**",
+			"build/**",
+			".next/**",
+			"*.db*"
+		]
+	},
+	"agent": {
+		"default": {
+			"description": "Orchestrator — delegates to specialized sub-agents. Never implements alone.",
+			"mode": "primary",
+			"temperature": 0.2
+		},
+		"architect": {
+			"description": "System architect — designs solutions, selects patterns, creates plans before coding.",
+			"mode": "subagent",
+			"temperature": 0.15
+		},
+		"builder": {
+			"description": "Code implementation — writes production code with full test coverage.",
+			"mode": "subagent",
+			"temperature": 0.1
+		},
+		"reviewer": {
+			"description": "Code review — correctness, security, performance, style.",
+			"mode": "subagent",
+			"temperature": 0.05
+		},
+		"tester": {
+			"description": "Testing — writes tests, runs coverage, finds edge cases.",
+			"mode": "subagent",
+			"temperature": 0.1
+		},
+		"debugger": {
+			"description": "Debugging — root cause analysis, runtime errors, performance issues, memory leaks.",
+			"mode": "subagent",
+			"temperature": 0.05
+		},
+		"researcher": {
+			"description": "Deep research — finds docs, compares libraries, checks deprecations and alternatives.",
+			"mode": "subagent",
+			"temperature": 0.6
+		},
+		"explorer": {
+			"description": "Codebase exploration — finds files, understands structure, maps imports.",
+			"mode": "subagent",
+			"temperature": 0.1
+		},
+		"websearch": {
+			"description": "Web search — quick lookups, documentation searching, security advisories.",
+			"mode": "subagent",
+			"temperature": 0.1
+		},
+		"webscraper": {
+			"description": "Web scraping — data extraction, crawling, pagination, anti-bot bypass.",
+			"mode": "subagent",
+			"temperature": 0.1
+		},
+		"general": {
+			"description": "Multi-step work — isolated units that don't fit other categories.",
+			"mode": "subagent",
+			"temperature": 0.2
+		},
+		"security": {
+			"description": "Security auditor — vulnerabilities, injection risks, secret exposure.",
+			"mode": "subagent",
+			"temperature": 0.05
+		},
+		"documenter": {
+			"description": "Documentation — README, API docs, changelogs, inline comments.",
+			"mode": "subagent",
+			"temperature": 0.1
+		},
+		"planner": {
+			"description": "Task planner — decomposes work, estimates effort, sequences dependencies.",
+			"mode": "subagent",
+			"temperature": 0.15
+		},
+		"coder": {
+			"description": "Production-grade coding agent — plans on disk, builds in verified vertical slices, escapes loops mechanically.",
+			"mode": "primary",
+			"temperature": 0.05
+		}
+	},
+	"plugin": [
+		"opencode-vibeguard",
+		"opencode-worktree",
+		"opencode-scheduler",
+		"opencode-background-agents"
+	],
+	"mcp": {
+		"ast-lens": {
+			"type": "local",
+			"command": ["npx", "-y", "ast-lens-mcp", "."],
+			"timeout": 60000
+		},
+		"playwright": {
+			"type": "local",
+			"command": ["npx", "-y", "@playwright/mcp"],
+			"timeout": 120000
+		},
+		"github": {
+			"type": "local",
+			"command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+			"timeout": 60000,
+			"environment": {
+				"GITHUB_TOKEN": "{env:GITHUB_TOKEN}"
+			}
+		}
+	},
+	"formatter": {
+		"prettier": {
+			"command": [
+				"npx",
+				"-y",
+				"prettier",
+				"--write",
+				"--prose-wrap",
+				"always",
+				"$FILE"
+			],
+			"extensions": [
+				".js",
+				".jsx",
+				".ts",
+				".tsx",
+				".html",
+				".css",
+				".md",
+				".json",
+				".yaml",
+				".yml",
+				".graphql"
+			]
+		},
+		"biome": {
+			"command": ["npx", "-y", "@biomejs/biome", "format", "--write", "$FILE"],
+			"extensions": [".json", ".jsonc"]
+		}
+	},
+	"instructions": ["AGENTS.md"]
+}
