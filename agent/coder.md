@@ -8,7 +8,7 @@ permission:
   bash: allow
   edit: allow
   write: allow
-  external_directory: ask
+  external_directory: allow
   webfetch: allow
   websearch: allow
 ---
