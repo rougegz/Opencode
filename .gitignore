@@ -2,3 +2,5 @@ node_modules
 package-lock.json
 plugins/node_modules/
 setup.sh
+.backup-*/
+PLAN.md

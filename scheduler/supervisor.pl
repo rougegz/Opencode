@@ -16,8 +16,7 @@ sub iso_now {
 
 sub read_json {
   my ($path) = @_;
-  open my $fh, "<", $path or die "Failed to read $path: $!
-";
+  open my $fh, "<", $path or die "Failed to read $path: $!\n";
   local $/;
   my $raw = <$fh>;
   close $fh;
@@ -29,22 +28,17 @@ sub write_json_atomic {
   my ($path, $data) = @_;
   my $tmp = "$path.tmp.$$";
   my $json = JSON::PP->new->utf8->canonical;
-  open my $fh, ">", $tmp or die "Failed to write $tmp: $!
-";
+  open my $fh, ">", $tmp or die "Failed to write $tmp: $!\n";
   print $fh $json->encode($data);
-  close $fh or die "Failed to close $tmp: $!
-";
-  rename $tmp, $path or die "Failed to rename $tmp -> $path: $!
-";
+  close $fh or die "Failed to close $tmp: $!\n";
+  rename $tmp, $path or die "Failed to rename $tmp -> $path: $!\n";
 }
 
 sub append_jsonl {
   my ($path, $data) = @_;
   my $json = JSON::PP->new->utf8->canonical;
-  open my $fh, ">>", $path or die "Failed to append $path: $!
-";
-  print $fh $json->encode($data) . "
-";
+  open my $fh, ">>", $path or die "Failed to append $path: $!\n";
+  print $fh $json->encode($data) . "\n";
   close $fh;
 }
 
@@ -60,18 +54,17 @@ sub random_id {
 }
 
 my $job_path = shift @ARGV;
-if (!$job_path) { die "usage: supervisor.pl <job.json>
-"; }
+if (!$job_path) { die "usage: supervisor.pl <job.json>\n"; }
 
 my $job = read_json($job_path);
 my $scope_id = $job->{scopeId} || "";
 my $slug = $job->{slug} || "";
-if (!$scope_id || !$slug) { die "job missing scopeId/slug
-"; }
+if (!$scope_id || !$slug) { die "job missing scopeId/slug\n"; }
+die "bad scopeId\n" if $scope_id =~ /[^A-Za-z0-9_-]/;
+die "bad slug\n" if $slug =~ /[^A-Za-z0-9_-]/;
 
 my $home = $ENV{HOME} || "";
-if (!$home) { die "HOME is not set
-"; }
+if (!$home) { die "HOME is not set\n"; }
 
 my $config_root = "$home/.config/opencode";
 my $scheduler_root = "$config_root/scheduler/scopes/$scope_id";
@@ -84,10 +77,8 @@ make_path($runs_dir);
 make_path($logs_dir);
 
 my $log_path = "$logs_dir/$slug.log";
-open STDOUT, ">>", $log_path or die "Failed to open log $log_path: $!
-";
-open STDERR, ">&STDOUT" or die "Failed to dup stderr: $!
-";
+open STDOUT, ">>", $log_path or die "Failed to open log $log_path: $!\n";
+open STDERR, ">&STDOUT" or die "Failed to dup stderr: $!\n";
 select STDOUT; $| = 1;
 select STDERR; $| = 1;
 
@@ -97,9 +88,7 @@ if (-e $lock_path) {
   my $pid = ($lock && ref($lock) eq 'HASH') ? ($lock->{pid} || 0) : 0;
   if (pid_alive($pid)) {
     my $now = iso_now();
-    print "
-=== Scheduled run skipped (already running pid=$pid) $now ===
-";
+    print "\n=== Scheduled run skipped (already running pid=$pid) $now ===\n";
     exit 0;
   }
   unlink $lock_path;
@@ -131,16 +120,12 @@ if ($ENV{OPENCODE_PERMISSION}) {
 $ENV{OPENCODE_PERMISSION} = JSON::PP->new->canonical->encode($perm);
 $ENV{OPENCODE_SCHEDULER_RUN_ID} = $run_id;
 
-print "
-=== Scheduled run $started_at runId=$run_id ===
-";
+print "\n=== Scheduled run $started_at runId=$run_id ===\n";
 
 my $inv = $job->{invocation};
 if (!$inv || ref($inv) ne 'HASH' || !$inv->{command} || ref($inv->{args}) ne 'ARRAY') {
   my $now = iso_now();
-  print "
-=== Supervisor error $now: job missing invocation.command/args ===
-";
+  print "\n=== Supervisor error $now: job missing invocation.command/args ===\n";
   $job->{lastRunStatus} = "failed";
   $job->{lastRunError} = "job missing invocation";
   $job->{updatedAt} = $now;
@@ -161,9 +146,7 @@ my $timed_out = 0;
 my $child_pid = fork();
 if (!defined $child_pid) {
   my $now = iso_now();
-  print "
-=== Supervisor error $now: fork failed: $! ===
-";
+  print "\n=== Supervisor error $now: fork failed: $! ===\n";
   $job->{lastRunStatus} = "failed";
   $job->{lastRunError} = "fork failed";
   $job->{updatedAt} = $now;
@@ -173,26 +156,20 @@ if (!defined $child_pid) {
 }
 
 if ($child_pid == 0) {
-  chdir $workdir or die "Failed to chdir to $workdir: $!
-";
+  chdir $workdir or die "Failed to chdir to $workdir: $!\n";
   eval { setsid(); };
   exec { $command } $command, @args;
-  die "Failed to exec $command: $!
-";
+  die "Failed to exec $command: $!\n";
 }
 
 if (defined($timeout) && $timeout > 0) {
   local $SIG{ALRM} = sub {
     $timed_out = 1;
     my $now = iso_now();
-    print "
-=== Timeout after $timeout seconds $now; sending SIGTERM ===
-";
+    print "\n=== Timeout after $timeout seconds $now; sending SIGTERM ===\n";
     kill 'TERM', -$child_pid;
     sleep 5;
-    print "
-=== Forcing SIGKILL $now ===
-";
+    print "\n=== Forcing SIGKILL $now ===\n";
     kill 'KILL', -$child_pid;
   };
   alarm($timeout);
@@ -245,7 +222,5 @@ append_jsonl("$runs_dir/$slug.jsonl", {
 });
 
 unlink $lock_path;
-print "
-=== Finished $finished_at status=$final_status exitCode=$exit_code durationMs=$duration_ms ===
-";
+print "\n=== Finished $finished_at status=$final_status exitCode=$exit_code durationMs=$duration_ms ===\n";
 exit($exit_code);

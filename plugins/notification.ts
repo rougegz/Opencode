@@ -1,13 +1,10 @@
-import type { Plugin } from "@opencode-ai/plugin"
+import type { Plugin } from "@opencode-ai/plugin";
 
-export const NotificationPlugin: Plugin = async ({ $ }) => {
+export const NotificationPlugin: Plugin = async () => {
   return {
-    event: async ({ event }) => {
-      if (event.type === "session.idle") {
-        await $`echo 'Session completed!'`
-      }
-    },
-  }
-}
+    // Disabled: session.idle fires far too often (alert fatigue + wasted shell spawn).
+    // Re-enable with a real filter (e.g. TUI toast) only if you miss notifications.
+  };
+};
 
-export default NotificationPlugin
+export default NotificationPlugin;
